@@ -27,13 +27,43 @@ class Package {
   public void setConflicts(List<String> conflicts) { this.conflicts = conflicts; }
 }
 
+
 public class Main {
-  public static void main(String[] args) throws IOException {
+    // From https://www.programcreek.com/2014/03/leetcode-compare-version-numbers-java/
+    public static int compareVersion(String version1, String version2) {
+        String[] arr1 = version1.split("\\.");
+        String[] arr2 = version2.split("\\.");
+        int i=0;
+        while(i<arr1.length || i<arr2.length){
+            if(i<arr1.length && i<arr2.length){
+                if(Integer.parseInt(arr1[i]) < Integer.parseInt(arr2[i])){ return -1; }
+                else if(Integer.parseInt(arr1[i]) > Integer.parseInt(arr2[i])){ return 1; }
+            } else if(i<arr1.length){
+                if(Integer.parseInt(arr1[i]) != 0){ return 1; }
+            } else if(i<arr2.length){
+                if(Integer.parseInt(arr2[i]) != 0){ return -1; }
+            }
+            i++;
+        }
+        return 0;
+    }
+
+    public static void main(String[] args) throws IOException {
     TypeReference<List<Package>> repoType = new TypeReference<List<Package>>() {};
     List<Package> repo = JSON.parseObject(readFile(args[0]), repoType);
     TypeReference<List<String>> strListType = new TypeReference<List<String>>() {};
     List<String> initial = JSON.parseObject(readFile(args[1]), strListType);
     List<String> constraints = JSON.parseObject(readFile(args[2]), strListType);
+
+    List<PackageP> parsed_repo = new ArrayList<PackageP>();
+    for (Package d : repo) {
+        parsed_repo.add(new PackageP(repo));
+    }
+    List<List<String>> str_dependencies = repo.get(0).getDepends();
+    List<Package> pack_dependencies = new ArrayList<>();
+    int x = compareVersion("1.03","1.3.0");
+
+    //Change List<String> to List<Package>
 
     // CHANGE CODE BELOW:
     // using repo, initial and constraints, compute a solution and print the answer
@@ -48,12 +78,13 @@ public class Main {
         System.out.printf("\n");
       }
     }
-  }
 
-  static String readFile(String filename) throws IOException {
+    }
+
+    static String readFile(String filename) throws IOException {
     BufferedReader br = new BufferedReader(new FileReader(filename));
     StringBuilder sb = new StringBuilder();
     br.lines().forEach(line -> sb.append(line));
     return sb.toString();
-  }
+    }
 }

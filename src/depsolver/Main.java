@@ -32,8 +32,8 @@ class Package {
   public void setSize(Integer size) { this.size = size; }
   public void setDepends(List<List<String>> depends) { this.depends = depends; }
   public void setConflicts(List<String> conflicts) { this.conflicts = conflicts; }
-  public void setDependsParsed(List<List<Package>> depends) { this.dependsParsed = depends; }
-  public void setConflictsParsed(List<Package> conflicts) { this.conflictsParsed = conflicts; }
+  public void addDependsParsed(List<Package> deps) { dependsParsed.add(deps); }
+  public void setConflictsParsed(Package conf) { conflictsParsed.add(conf); }
 
   public void parseDepsCons(List<Package> raw_repo) {
     for (List<String> d3 : getDepends()) {
@@ -41,26 +41,34 @@ class Package {
     }
   }
 
+  //Sets "getDependsParsed"
   private void parseDC(List<String> deps, List<Package> raw_repo){
+      List<List<Package>> dependencyHolder = new ArrayList<List<Package>>();
       for (String dep : deps) {
           //get deps from raw_repo by name, may use a HashMap for faster search
           //1. Parse version, grab name, operator, and version string
+          List<Package> dependencyN = new ArrayList<>();
           Pattern r = Pattern.compile("([.+a-zA-Z0-9-]+)(?:(>=|<=|=|<|>)(\\d+(?:\\.\\d+)*))?");
           Matcher m = r.matcher(dep);
           m.find();
           String name_str = m.group(1);
           String operator_str = m.group(2);
-          List<Package> packages_of_name = new ArrayList<Package>();
           for (Package p : raw_repo) {
-              if((p.getName().equals(name_str))) {
-                  packages_of_name.add(p);
+              if(p.getName().equals(name_str)) {
+                  dependencyN.add(p);
+                  // Added to deps already, remove from raw_repo, reduces iteration over repo
               }
           }
-
-
           // Go through repo, pop that shit
-          String version_str = m.group(3);
-          int x = 0;
+          addDependsParsed(dependencyN);
+
+      }
+  }
+
+  public Boolean correctVersion(String operator) {
+      switch(operator){
+          case("+"): result = a + b; break;
+          case("-"): result = a - b; break;
       }
   }
 }
@@ -121,7 +129,7 @@ public class Main {
     for(Package pack : repo) {
         pack.parseDepsCons(repo);
     }
-    List<Package> parsed_repo = parseDepsNCons(repo);
+    //List<Package> parsed_repo = parseDepsNCons(repo);
 
     List<List<String>> str_dependencies = repo.get(0).getDepends();
     List<Package> pack_dependencies = new ArrayList<>();

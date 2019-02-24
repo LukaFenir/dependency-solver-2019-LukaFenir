@@ -50,10 +50,10 @@ class Package {
           m.find();
           String name_str = m.group(1);
           String operator_str = m.group(2);
-          List<Package> list_of_packages = new ArrayList<Package>();
+          List<Package> packages_of_name = new ArrayList<Package>();
           for (Package p : raw_repo) {
-              if((p.getName() == name_str) && (p.getVersion())) {
-
+              if((p.getName().equals(name_str))) {
+                  packages_of_name.add(p);
               }
           }
 

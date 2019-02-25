@@ -33,44 +33,70 @@ class Package {
   public void setDepends(List<List<String>> depends) { this.depends = depends; }
   public void setConflicts(List<String> conflicts) { this.conflicts = conflicts; }
   public void addDependsParsed(List<Package> deps) { dependsParsed.add(deps); }
-  public void setConflictsParsed(Package conf) { conflictsParsed.add(conf); }
+  public void addConflictsParsed(List<Package> conf) { this.conflictsParsed = conf; }
 
   public void parseDepsCons(List<Package> raw_repo) {
-    for (List<String> d3 : getDepends()) {
-        parseDC(d3, raw_repo);
+    for (List<String> dependencies : getDepends()) {
+        addDependsParsed(parseDC(dependencies, raw_repo));
     }
+    addConflictsParsed(parseDC(conflicts, raw_repo));
   }
 
-  //Sets "getDependsParsed"
-  private void parseDC(List<String> deps, List<Package> raw_repo){
-      List<List<Package>> dependencyHolder = new ArrayList<List<Package>>();
+  //Sets "getDependsParsed" one dependency at a time
+  private List<Package> parseDC(List<String> deps, List<Package> raw_repo){
+      List<Package> dependencyN = new ArrayList<>();
       for (String dep : deps) {
           //get deps from raw_repo by name, may use a HashMap for faster search
           //1. Parse version, grab name, operator, and version string
-          List<Package> dependencyN = new ArrayList<>();
+
           Pattern r = Pattern.compile("([.+a-zA-Z0-9-]+)(?:(>=|<=|=|<|>)(\\d+(?:\\.\\d+)*))?");
           Matcher m = r.matcher(dep);
           m.find();
           String name_str = m.group(1);
           String operator_str = m.group(2);
+          Boolean x = (operator_str == null);
           for (Package p : raw_repo) {
-              if(p.getName().equals(name_str)) {
+              if((p.getName().equals(name_str)) && ((operator_str == null) || correctVersion(m.group(2),p.getVersion(),m.group(3)))) {
                   dependencyN.add(p);
                   // Added to deps already, remove from raw_repo, reduces iteration over repo
               }
           }
           // Go through repo, pop that shit
-          addDependsParsed(dependencyN);
-
       }
+      return dependencyN;
   }
 
-  public Boolean correctVersion(String operator) {
+  public Boolean correctVersion(String operator, String version, String constraint) {
+      int compValue = compareVersion(version, constraint);
       switch(operator){
-          case("+"): result = a + b; break;
-          case("-"): result = a - b; break;
+          case("<="): return (compValue == 0)||(compValue == -1);
+          case("<"): return (compValue == -1);
+          case(">="): return (compValue == 0)||(compValue == 1);
+          case(">"): return (compValue == 1);
+          case("="): return (compValue == 0);
       }
+      return false;
   }
+
+  // 0:equal to constraint, -1:package version smaller, 1: package version bigger
+    public int compareVersion(String version, String constraint) {
+        String[] versionArr = version.split("\\.");
+        String[] constraintArr = constraint.split("\\.");
+
+        int i=0;
+        while(i<versionArr.length || i<constraintArr.length){
+            if(i<versionArr.length && i<constraintArr.length){
+                if(Integer.parseInt(versionArr[i]) < Integer.parseInt(constraintArr[i])){ return -1; }
+                else if(Integer.parseInt(versionArr[i]) > Integer.parseInt(constraintArr[i])){ return 1; }
+            } else if(i<versionArr.length){
+                if(Integer.parseInt(versionArr[i]) != 0){ return 1; }
+            } else if(i<constraintArr.length){
+                if(Integer.parseInt(constraintArr[i]) != 0){ return -1; }
+            }
+            i++;
+        }
+        return 0;
+    }
 }
 
 
@@ -125,15 +151,12 @@ public class Main {
     List<String> initial = JSON.parseObject(readFile(args[1]), strListType);
     List<String> constraints = JSON.parseObject(readFile(args[2]), strListType);
 
-    // Go through each package and depend to other packages
+    // Go through each package and parse string constraints into Package references
     for(Package pack : repo) {
         pack.parseDepsCons(repo);
     }
-    //List<Package> parsed_repo = parseDepsNCons(repo);
 
-    List<List<String>> str_dependencies = repo.get(0).getDepends();
-    List<Package> pack_dependencies = new ArrayList<>();
-    int x = compareVersion("1.03","1.3.0");
+    //A data structure is born
 
     //Change List<String> to List<Package>
 

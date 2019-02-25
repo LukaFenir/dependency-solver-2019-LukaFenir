@@ -12,7 +12,8 @@ class PackageExpand {
 
     }
 
-    public List<Package> expandPackageString(String depStr, List<Package> raw_repo){
+    public List<Package>[] expandPackageString(String depStr, List<Package> raw_repo){
+        List<Package> repo = raw_repo;
         List<Package> dependencyList = new ArrayList<>();
         Pattern r = Pattern.compile("([.+a-zA-Z0-9-]+)(?:(>=|<=|=|<|>)(\\d+(?:\\.\\d+)*))?");
         Matcher m = r.matcher(depStr);
@@ -21,10 +22,11 @@ class PackageExpand {
         for (Package p : raw_repo) { //get deps from raw_repo by name, may use a HashMap for faster search
             if((p.getName().equals(dependency.getName())) && ((dependency.getOperator().equals("")) || dependency.correctVersion(p.getVersion()))) {
                 dependencyList.add(p);
+                repo.remove(p);
                 // Added to deps already,  pop from raw_repo, reduces iteration over repo
             }
         }
-        return dependencyList;
+        return (new List[] { dependencyList, repo });
     }
 }
 
@@ -39,20 +41,24 @@ class FinalConstraints {
     }
 
     private List<List<Package>> expandConstraints(List<String> constraintsString, List<Package> raw_repo) {
+        List<Package> repo = raw_repo;
         List<List<Package>> constraintsPosNeg = new ArrayList<>();
         constraintsPosNeg.add(new ArrayList<>());
         constraintsPosNeg.add(new ArrayList<>()); //change to loop?
 
         PackageExpand expander = new PackageExpand();
+        List<Package>[] expanded = new List[2];
         for(String s : constraintsString) {
             String sign = s.substring(0,1);
-            List<Package> packages = expander.expandPackageString(s.substring(1), raw_repo);
+            expanded = expander.expandPackageString(s.substring(1), raw_repo);
+            List<Package> packages = expanded[0];
             switch(sign) {
                 case ("+"):
                     constraintsPosNeg.get(0).addAll(packages); break;
                 case ("-"):
                     constraintsPosNeg.get(1).addAll(packages); break;
             }
+            repo = expanded[1];
         }
         return constraintsPosNeg;
     }
@@ -158,7 +164,8 @@ public class Package {
     public void expandRepoConstraints(List<Package> raw_repo) {
         List<Package> repo = raw_repo;
         for (List<String> dependencies : getDepends()) {
-            addDependsExpanded(expandPackageList(dependencies, raw_repo));
+            List<Package> expanded = expandPackageList(dependencies, raw_repo);
+            addDependsExpanded(expanded);
         }
         addConflictsExpanded(expandPackageList(conflicts, raw_repo));
     }
@@ -166,10 +173,14 @@ public class Package {
     //Input list of Strings and list of Packages (repo)
     //Outputs a list of Packages
     private List<Package> expandPackageList(List<String> deps, List<Package> raw_repo){
+        List<Package> repo = raw_repo;
         List<Package> dependencyList = new ArrayList<>();
         PackageExpand expander = new PackageExpand();
+        List<Package>[] expanded = new List[2]; //Dependency list and new repo list
         for (String dep : deps) {
-            dependencyList.addAll(expander.expandPackageString(dep, raw_repo));
+            expanded = expander.expandPackageString(dep, repo);
+            dependencyList.addAll(expanded[0]);
+            repo = expanded[1];
         }
         return dependencyList;
     }

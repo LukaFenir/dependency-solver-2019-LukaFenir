@@ -23,7 +23,6 @@ public class Main {
     for(Package pack : repo) {
         pack.expandRepoConstraints(repo);
     }
-    //Can look at positive/negative constraints
     FinalConstraints finalConstraints = new FinalConstraints(constraints,repo);
 
     //Take a final constraint, check it for children

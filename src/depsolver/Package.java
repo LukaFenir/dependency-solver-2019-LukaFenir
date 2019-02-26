@@ -57,13 +57,10 @@ class FinalConstraints {
         return constraintsPosNeg;
     }
 
-    public List<Package> getPositiveConstraints() {
+    public List<Package> getPackages() {
         return positiveConstraints;
     }
 
-    public List<Package> getNegativeConstraints() {
-        return negativeConstraints;
-    }
 }
 
 class PackageConstraint {
@@ -156,7 +153,6 @@ public class Package {
     public void addConflictsExpanded(List<Package> conf) { this.conflictsExpanded = conf; }
 
     public void expandRepoConstraints(List<Package> raw_repo) {
-        List<Package> repo = raw_repo;
         for (List<String> dependencies : getDepends()) {
             addDependsExpanded(expandPackageList(dependencies, raw_repo));
         }
@@ -167,11 +163,24 @@ public class Package {
     //Outputs a list of Packages
     private List<Package> expandPackageList(List<String> deps, List<Package> raw_repo){
         List<Package> dependencyList = new ArrayList<>();
-        PackageExpand expander = new PackageExpand();
         for (String dep : deps) {
-            dependencyList.addAll(expander.expandPackageString(dep, raw_repo));
+            dependencyList.addAll(expandPackageString(dep, raw_repo));
         }
         return dependencyList;
     }
 
+    public List<Package> expandPackageString(String depStr, List<Package> raw_repo){
+        List<Package> dependencyList = new ArrayList<>();
+        Pattern r = Pattern.compile("([.+a-zA-Z0-9-]+)(?:(>=|<=|=|<|>)(\\d+(?:\\.\\d+)*))?");
+        Matcher m = r.matcher(depStr);
+        m.find();
+        PackageConstraint dependency = new PackageConstraint(m.group(1),m.group(2),m.group(3));
+        for (Package p : raw_repo) { //get deps from raw_repo by name, may use a HashMap for faster search
+            if((p.getName().equals(dependency.getName())) && ((dependency.getOperator().equals("")) || dependency.correctVersion(p.getVersion()))) {
+                dependencyList.add(p);
+                // Added to deps already,  pop from raw_repo, reduces iteration over repo
+            }
+        }
+        return dependencyList;
+    }
 }

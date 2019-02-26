@@ -63,10 +63,13 @@ class FinalConstraints {
         return constraintsPosNeg;
     }
 
-    public List<Package> getPackages() {
+    public List<Package> getPositiveConstraints() {
         return positiveConstraints;
     }
 
+    public List<Package> getNegativeConstraints() {
+        return negativeConstraints;
+    }
 }
 
 class PackageConstraint {
@@ -159,6 +162,7 @@ public class Package {
     public void addConflictsExpanded(List<Package> conf) { this.conflictsExpanded = conf; }
 
     public void expandRepoConstraints(List<Package> raw_repo) {
+        List<Package> repo = raw_repo;
         for (List<String> dependencies : getDepends()) {
             List<Package> expanded = expandPackageList(dependencies, raw_repo);
             addDependsExpanded(expanded);
@@ -171,33 +175,14 @@ public class Package {
     private List<Package> expandPackageList(List<String> deps, List<Package> raw_repo){
         List<Package> repo = raw_repo;
         List<Package> dependencyList = new ArrayList<>();
-<<<<<<< HEAD
         PackageExpand expander = new PackageExpand();
         List<Package>[] expanded = new List[2]; //Dependency list and new repo list
         for (String dep : deps) {
             expanded = expander.expandPackageString(dep, repo);
             dependencyList.addAll(expanded[0]);
             repo = expanded[1];
-=======
-        for (String dep : deps) {
-            dependencyList.addAll(expandPackageString(dep, raw_repo));
->>>>>>> parent of 17c4d19... Begin removing repo packages as added
         }
         return dependencyList;
     }
 
-    public List<Package> expandPackageString(String depStr, List<Package> raw_repo){
-        List<Package> dependencyList = new ArrayList<>();
-        Pattern r = Pattern.compile("([.+a-zA-Z0-9-]+)(?:(>=|<=|=|<|>)(\\d+(?:\\.\\d+)*))?");
-        Matcher m = r.matcher(depStr);
-        m.find();
-        PackageConstraint dependency = new PackageConstraint(m.group(1),m.group(2),m.group(3));
-        for (Package p : raw_repo) { //get deps from raw_repo by name, may use a HashMap for faster search
-            if((p.getName().equals(dependency.getName())) && ((dependency.getOperator().equals("")) || dependency.correctVersion(p.getVersion()))) {
-                dependencyList.add(p);
-                // Added to deps already,  pop from raw_repo, reduces iteration over repo
-            }
-        }
-        return dependencyList;
-    }
 }

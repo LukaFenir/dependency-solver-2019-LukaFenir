@@ -26,6 +26,20 @@ class PackageExpand {
         }
         return dependencyList;
     }
+
+    public Package expandInitialString(String depStr, List<Package> raw_repo){
+        Pattern r = Pattern.compile("([.+a-zA-Z0-9-]+)(?:(>=|<=|=|<|>)(\\d+(?:\\.\\d+)*))?");
+        Matcher m = r.matcher(depStr);
+        m.find();
+        PackageConstraint dependency = new PackageConstraint(m.group(1),m.group(2),m.group(3));
+        for (Package p : raw_repo) { //get deps from raw_repo by name, may use a HashMap for faster search
+            if((p.getName().equals(dependency.getName())) && ((dependency.getOperator().equals("")) || dependency.correctVersion(p.getVersion()))) {
+                return p;
+                // Added to deps already,  pop from raw_repo, reduces iteration over repo
+            }
+        }
+        return new Package(); //erm
+    }
 }
 
 class FinalConstraints {

@@ -9,24 +9,67 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Main {
 
-    public static void bruteForce(){
-
+    public static void bruteForce(List<Package>[] state, List<Package> repo){
+        if(!isValid(state)){
+            return;
+        }
+        if(false){ //If IsFinal
+            System.out.println("Solution found!");
+        }
+        //List<Package>[] stateCopy = state;
+        for(Package p : repo) {
+            bruteForce(addToState(state, p),removeFromRepo(repo, p));
+        }
     }
 
-    public static boolean isValid(List<Package> state){
-        if(state.isEmpty()){
+    //Gotta initialise a brand new state object each time
+    public static List<Package>[] addToState(List<Package>[] originalState, Package newPackage){
+        List<Package>[] newState = new List[2];
+        newState[0] = new ArrayList<>();
+        newState[1] = new ArrayList<>();
+        newState[0].addAll(originalState[0]);
+        newState[0].add(newPackage);
+        newState[1].addAll(originalState[1]);
+        newState[1].addAll(newPackage.getConflictsExpanded());
+        return newState;
+    }
+
+    public static List<Package> removeFromRepo(List<Package> originalRepo, Package pack){
+        List<Package> newRepo = new ArrayList<>();
+        newRepo.addAll(originalRepo);
+        newRepo.remove(pack);
+        return newRepo;
+    }
+
+    /*
+    search(x):
+  if not valid(x) return
+  if x seen, return
+  make x seen
+  if final(x):
+    solution found!
+  for each package p in repo:
+    obtain y from x by flipping state of p (installed<->uninstalled)
+    search(y)
+     */
+
+    //[List<Package> packages, List<Package> grouped conflicts]
+    public static boolean isValid(List<Package>[] state){
+        if(state[0].isEmpty()){
             return true;
         }
-        Package x = state.get(state.size()-1); //last element
+        Package x = state[0].get(state[0].size()-1); //last element
         List<List<Package>> deps = x.getDependsExpanded(); // [B3.2,C][D]
         if(!deps.isEmpty()) {
             //depsAreInState
             //for each List, is at least 1 package in state?
             for(List<Package> dep : deps){
-                if(!atLeastOne(state, dep)) { //If even one dep is not satisfied
+                if(!atLeastOne(state[0], dep)) { //If even one dep is not satisfied
                     return false;
                 }
             }
@@ -34,17 +77,22 @@ public class Main {
         List<Package> confs = x.getConflictsExpanded();
         if(!confs.isEmpty()) {
             for(Package pack : confs){
-                if(state.contains(pack)){
+                if(state[0].contains(pack)){
                     return false; //Conflicting package is in state
                 }
+            }
+        }
+        if(!state[1].isEmpty()){
+            if(state[1].contains(state[0].get(state[0].size()-1))){
+                return false;
             }
         }
         return true;
     }
 
-    public static boolean atLeastOne(List<Package> state, List<Package> dep){
+    public static boolean atLeastOne(List<Package> packages, List<Package> dep){
         for(Package pack : dep){
-            if(state.contains(pack)){
+            if(packages.contains(pack)){
                 return true; //Package is in state
             }
         }
@@ -55,7 +103,9 @@ public class Main {
     TypeReference<List<Package>> repoType = new TypeReference<List<Package>>() {};
     List<Package> repo = JSON.parseObject(readFile(args[0]), repoType);
     TypeReference<List<String>> strListType = new TypeReference<List<String>>() {};
-    List<String> initial = JSON.parseObject(readFile(args[1]), strListType);
+    //List<String> initial = JSON.parseObject(readFile(args[1]), strListType);
+        List<String> initial = new ArrayList<>();
+        initial.add("A=2.01");
     List<String> constraints = JSON.parseObject(readFile(args[2]), strListType);
 
 
@@ -66,15 +116,34 @@ public class Main {
     for(Package pack : repo) {
         pack.expandRepoConstraints(repo);
     }
-    List<Package> testState = new ArrayList<>();
+
+    PackageExpand expander = new PackageExpand();
+    for(String init : initial){
+        initialState.add(expander.expandInitialString(init, repo));
+    }
+    //initialState = expandInitialState(initial, repo);
+
+    /////// Testing validity
+    List<Package>[] testState = new List[2];
+    testState[0] = new ArrayList<>();
+    testState[1] = new ArrayList<>();
+    //List<Package> testState = new ArrayList<>();
     /*testState.add(repo.get(3)); //C
     testState.add(repo.get(4)); //D
     testState.add(repo.get(0)); //A -> C/B3.2 and D*/
-    testState.add(repo.get(3)); //C
-    testState.add(repo.get(2)); //B3.0
+    testState[0].add(repo.get(3)); //C
+        testState[1].addAll(repo.get(3).getConflictsExpanded());
+    testState[0].add(repo.get(2)); //B3.0
+        testState[1].addAll(repo.get(2).getConflictsExpanded());
     Boolean x = isValid(testState);
+    ////////
+    List<Package>[] initStateAndConstraints= new List[2];
+    initStateAndConstraints[0] = new ArrayList<>();
+    initStateAndConstraints[1] = new ArrayList<>();
 
-    FinalConstraints finalConstraints = new FinalConstraints(constraints,repo);
+    bruteForce(initStateAndConstraints, repo);
+
+    FinalConstraints finalConstraints = new FinalConstraints(constraints,repo); //is this the right structure?
 
     //Take a final constraint, check it for children
 

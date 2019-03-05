@@ -14,16 +14,16 @@ import java.util.regex.Pattern;
 
 public class Main {
 
-    public static void bruteForce(List<Package>[] state, List<Package> repo, FinalConstraints finalState){
+    public static void bruteForce(State state, List<Package> repo, FinalConstraints finalState){
         if(!isValid(state)){
             return;
         }
-        if(isFinal(state[0], finalState)){ //If IsFinal
+        if(isFinal(state.getPackageList(), finalState)){ //If IsFinal
             System.out.println("Solution found!");
         }
         //List<Package>[] stateCopy = state;
         for(Package p : repo) {
-            bruteForce(addToState(state, p),removeFromRepo(repo, p), finalState);
+            bruteForce(addToState(state.getPackageList(), p),removeFromRepo(repo, p), finalState); //Can't just add to state, need to create new object every test
         }
     }
 
@@ -59,17 +59,17 @@ public class Main {
      */
 
     //[List<Package> packages, List<Package> grouped conflicts]
-    public static boolean isValid(List<Package>[] state){
-        if(state[0].isEmpty()){
+    public static boolean isValid(State state){
+        if(state.getPackageList().isEmpty()){
             return true;
         }
-        Package x = state[0].get(state[0].size()-1); //last element
+        Package x = state.getPackageList().get(state.getPackageList().size()-1); //last element
         List<List<Package>> deps = x.getDependsExpanded(); // [B3.2,C][D]
         if(!deps.isEmpty()) {
             //depsAreInState
             //for each List, is at least 1 package in state?
             for(List<Package> dep : deps){
-                if(!atLeastOne(state[0], dep)) { //If even one dep is not satisfied
+                if(!atLeastOne(state.getPackageList(), dep)) { //If even one dep is not satisfied
                     return false;
                 }
             }
@@ -77,13 +77,13 @@ public class Main {
         List<Package> confs = x.getConflictsExpanded();
         if(!confs.isEmpty()) {
             for(Package pack : confs){
-                if(state[0].contains(pack)){
+                if(state.getPackageList().contains(pack)){
                     return false; //Conflicting package is in state
                 }
             }
         }
-        if(!state[1].isEmpty()){
-            if(state[1].contains(state[0].get(state[0].size()-1))){
+        if(!state.getAccumulatedConstraints().isEmpty()){
+            if(state.getAccumulatedConstraints().contains(state.getAccumulatedConstraints().get(state.getPackageList().size()-1))){
                 return false;
             }
         }

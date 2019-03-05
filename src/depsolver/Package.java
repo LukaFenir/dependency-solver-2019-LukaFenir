@@ -51,6 +51,13 @@ class State {
         accConstraints = new ArrayList<>();
     }
 
+    public List<Package> getPackageList() {
+        return packageList;
+    }
+
+    public List<Package> getAccumulatedConstraints() {
+        return accConstraints;
+    }
     //Add ability to add to packageList/accConstraint
 }
 

@@ -42,39 +42,16 @@ class PackageExpand {
     }
 }
 
-class FinalConstraints {
+class State {
+    private List<Package> packageList;
+    private List<Package> accConstraints;
 
-    private List<Package> positiveConstraints;
-    private List<Package> negativeConstraints;
-
-    public FinalConstraints(List<String> constraintsString, List<Package> raw_repo) {
-        positiveConstraints = expandConstraints(constraintsString, raw_repo).get(0);
-        negativeConstraints = expandConstraints(constraintsString, raw_repo).get(1);
+    public State() {
+        packageList = new ArrayList<>();
+        accConstraints = new ArrayList<>();
     }
 
-    private List<List<Package>> expandConstraints(List<String> constraintsString, List<Package> raw_repo) {
-        List<List<Package>> constraintsPosNeg = new ArrayList<>();
-        constraintsPosNeg.add(new ArrayList<>());
-        constraintsPosNeg.add(new ArrayList<>()); //change to loop?
-
-        PackageExpand expander = new PackageExpand();
-        for(String s : constraintsString) {
-            String sign = s.substring(0,1);
-            List<Package> packages = expander.expandPackageString(s.substring(1), raw_repo);
-            switch(sign) {
-                case ("+"):
-                    constraintsPosNeg.get(0).addAll(packages); break;
-                case ("-"):
-                    constraintsPosNeg.get(1).addAll(packages); break;
-            }
-        }
-        return constraintsPosNeg;
-    }
-
-    public List<Package> getPackages() {
-        return positiveConstraints;
-    }
-
+    //Add ability to add to packageList/accConstraint
 }
 
 class PackageConstraint {

@@ -14,16 +14,16 @@ import java.util.regex.Pattern;
 
 public class Main {
 
-    public static void bruteForce(List<Package>[] state, List<Package> repo){
+    public static void bruteForce(List<Package>[] state, List<Package> repo, FinalConstraints finalState){
         if(!isValid(state)){
             return;
         }
-        if(false){ //If IsFinal
+        if(isFinal(state[0], finalState)){ //If IsFinal
             System.out.println("Solution found!");
         }
         //List<Package>[] stateCopy = state;
         for(Package p : repo) {
-            bruteForce(addToState(state, p),removeFromRepo(repo, p));
+            bruteForce(addToState(state, p),removeFromRepo(repo, p), finalState);
         }
     }
 
@@ -90,6 +90,16 @@ public class Main {
         return true;
     }
 
+    public static boolean isFinal(List<Package> state, FinalConstraints finalState){
+        //Does state contains positive, and doesn't contain negative
+        for(Package requiredPack : finalState.getPositivePackages()) {
+            if(!state.contains(requiredPack)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static boolean atLeastOne(List<Package> packages, List<Package> dep){
         for(Package pack : dep){
             if(packages.contains(pack)){
@@ -121,6 +131,9 @@ public class Main {
     for(String init : initial){
         initialState.add(expander.expandInitialString(init, repo));
     }
+
+    FinalConstraints finalConstraints = new FinalConstraints(constraints,repo); //is this the right structure?
+
     //initialState = expandInitialState(initial, repo);
 
     /////// Testing validity
@@ -137,19 +150,20 @@ public class Main {
         testState[1].addAll(repo.get(2).getConflictsExpanded());
     Boolean x = isValid(testState);
     ////////
+    State initState = new State();
     List<Package>[] initStateAndConstraints= new List[2];
     initStateAndConstraints[0] = new ArrayList<>();
     initStateAndConstraints[1] = new ArrayList<>();
 
-    bruteForce(initStateAndConstraints, repo);
+    //initStateAndConstraints = [State list, Constraints list]
+    //bruteForce(initState, repo, finalConstraints); // Change bruteForce() to accept State instead of List[2]
+    bruteForce(initStateAndConstraints, repo, finalConstraints);
 
-    FinalConstraints finalConstraints = new FinalConstraints(constraints,repo); //is this the right structure?
 
     //Take a final constraint, check it for children
 
     // CHANGE CODE BELOW:
     // using repo, initial and constraints, compute a solution and print the answer
-    System.out.println("I like bananas");
     for (Package p : repo) {
       System.out.printf("package %s version %s\n", p.getName(), p.getVersion());
       for (List<String> clause : p.getDepends()) {

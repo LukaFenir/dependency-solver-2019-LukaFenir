@@ -1,7 +1,5 @@
 package depsolver;
 
-import com.sun.xml.internal.bind.v2.runtime.reflect.Lister;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -38,28 +36,19 @@ class PackageExpand {
                 // Added to deps already,  pop from raw_repo, reduces iteration over repo
             }
         }
-        return new Package(); //erm
+        return new Package(); //TODO erm, if not in repo??
+    }
+
+    public List<String> packagesToCommands(State state) {
+        List<String> commands = new ArrayList<>();
+        for(Package pack : state.getPackageList()) {
+            commands.add("+" + pack.getName() + "=" + pack.getVersion());
+        }
+        return commands;
     }
 }
 
-class State {
-    private List<Package> packageList;
-    private List<Package> accConstraints;
 
-    public State() {
-        packageList = new ArrayList<>();
-        accConstraints = new ArrayList<>();
-    }
-
-    public List<Package> getPackageList() {
-        return packageList;
-    }
-
-    public List<Package> getAccumulatedConstraints() {
-        return accConstraints;
-    }
-    //Add ability to add to packageList/accConstraint
-}
 
 class PackageConstraint {
 

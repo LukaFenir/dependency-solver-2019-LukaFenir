@@ -26,41 +26,39 @@ class PackageExpand {
         }
         return dependencyList;
     }
-}
 
-class FinalConstraints {
-
-    private List<Package> positiveConstraints;
-    private List<Package> negativeConstraints;
-
-    public FinalConstraints(List<String> constraintsString, List<Package> raw_repo) {
-        positiveConstraints = expandConstraints(constraintsString, raw_repo).get(0);
-        negativeConstraints = expandConstraints(constraintsString, raw_repo).get(1);
-    }
-
-    private List<List<Package>> expandConstraints(List<String> constraintsString, List<Package> raw_repo) {
-        List<List<Package>> constraintsPosNeg = new ArrayList<>();
-        constraintsPosNeg.add(new ArrayList<>());
-        constraintsPosNeg.add(new ArrayList<>()); //change to loop?
-
-        PackageExpand expander = new PackageExpand();
-        for(String s : constraintsString) {
-            String sign = s.substring(0,1);
-            List<Package> packages = expander.expandPackageString(s.substring(1), raw_repo);
-            switch(sign) {
-                case ("+"):
-                    constraintsPosNeg.get(0).addAll(packages); break;
-                case ("-"):
-                    constraintsPosNeg.get(1).addAll(packages); break;
+    public Package expandInitialString(String depStr, List<Package> raw_repo){
+        Pattern r = Pattern.compile("([.+a-zA-Z0-9-]+)(?:(>=|<=|=|<|>)(\\d+(?:\\.\\d+)*))?");
+        Matcher m = r.matcher(depStr);
+        m.find();
+        PackageConstraint dependency = new PackageConstraint(m.group(1),m.group(2),m.group(3));
+        for (Package p : raw_repo) { //get deps from raw_repo by name, may use a HashMap for faster search
+            if((p.getName().equals(dependency.getName())) && ((dependency.getOperator().equals("")) || dependency.correctVersion(p.getVersion()))) {
+                return p;
+                // Added to deps already,  pop from raw_repo, reduces iteration over repo
             }
         }
-        return constraintsPosNeg;
+        return new Package(); //erm
+    }
+}
+
+class State {
+    private List<Package> packageList;
+    private List<Package> accConstraints;
+
+    public State() {
+        packageList = new ArrayList<>();
+        accConstraints = new ArrayList<>();
     }
 
-    public List<Package> getPackages() {
-        return positiveConstraints;
+    public List<Package> getPackageList() {
+        return packageList;
     }
 
+    public List<Package> getAccumulatedConstraints() {
+        return accConstraints;
+    }
+    //Add ability to add to packageList/accConstraint
 }
 
 class PackageConstraint {

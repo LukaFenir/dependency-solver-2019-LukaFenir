@@ -38,7 +38,7 @@ class PackageExpand {
                 // Added to deps already,  pop from raw_repo, reduces iteration over repo
             }
         }
-        return new Package(); //erm
+        return new Package(); //TODO erm, if not in repo??
     }
 }
 
@@ -49,6 +49,31 @@ class State {
     public State() {
         packageList = new ArrayList<>();
         accConstraints = new ArrayList<>();
+    }
+
+    public State(List<Package> packages, List<Package> constraints) {
+        packageList = new ArrayList<>();
+        accConstraints = new ArrayList<>();
+        packageList.addAll(packages);
+        accConstraints.addAll(constraints);
+    }
+
+    public void addPackage(Package newPackage) {
+        packageList.add(newPackage);
+        List<Package> newConstraints = newPackage.getConflictsExpanded();
+        for(Package constr : newConstraints) {
+            if(!accConstraints.contains(constr)){
+                accConstraints.add(constr);
+            }
+        }
+    }
+
+    public void addPackages(List<Package> newPackages) {
+        packageList.addAll(newPackages);
+    }
+
+    public void addConstraints(List<Package> newConstraints) {
+        accConstraints.addAll(newConstraints);
     }
 
     public List<Package> getPackageList() {

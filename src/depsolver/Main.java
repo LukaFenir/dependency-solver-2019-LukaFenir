@@ -2,40 +2,40 @@ package depsolver;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
-import com.sun.xml.internal.bind.v2.runtime.reflect.Lister;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class Main {
 
-    public static void bruteForce(State state, List<Package> repo, FinalConstraints finalState){
+    public static List<State> bruteForce(State state, List<Package> repo, FinalConstraints finalState, List<State> solutions){
         if(!isValid(state)){
-            return;
+            return solutions;
         }
         if(isFinal(state.getPackageList(), finalState)){ //If IsFinal
             System.out.println("Solution found!");
+            solutions.add(state);
+            return solutions;
+            //print list of commands to reach
         }
         //List<Package>[] stateCopy = state;
         for(Package p : repo) {
-            bruteForce(addToState(state.getPackageList(), p),removeFromRepo(repo, p), finalState); //Can't just add to state, need to create new object every test
+            //solution
+            bruteForce(addToState(state, p),removeFromRepo(repo, p), finalState, solutions); //Can't just add to state, need to create new object every test
         }
+        return solutions;
     }
 
     //Gotta initialise a brand new state object each time
-    public static List<Package>[] addToState(List<Package>[] originalState, Package newPackage){
-        List<Package>[] newState = new List[2];
-        newState[0] = new ArrayList<>();
-        newState[1] = new ArrayList<>();
-        newState[0].addAll(originalState[0]);
-        newState[0].add(newPackage);
-        newState[1].addAll(originalState[1]);
-        newState[1].addAll(newPackage.getConflictsExpanded());
+    public static State addToState(State originalState, Package newPackage){
+       State newState = new State(originalState.getPackageList(), originalState.getAccumulatedConstraints());
+        /*State newState = new State();
+        newState.addPackages(originalState.getPackageList());
+        newState.addConstraints(originalState.getAccumulatedConstraints());*/
+        newState.addPackage(newPackage);
         return newState;
     }
 
@@ -59,12 +59,13 @@ public class Main {
      */
 
     //[List<Package> packages, List<Package> grouped conflicts]
+    //State is not empty, New package dependencies are met, New package does not conflict with current packages
     public static boolean isValid(State state){
         if(state.getPackageList().isEmpty()){
             return true;
         }
-        Package x = state.getPackageList().get(state.getPackageList().size()-1); //last element
-        List<List<Package>> deps = x.getDependsExpanded(); // [B3.2,C][D]
+        Package lastPackage = state.getPackageList().get(state.getPackageList().size()-1); //last element
+        List<List<Package>> deps = lastPackage.getDependsExpanded(); // [B3.2,C][D]
         if(!deps.isEmpty()) {
             //depsAreInState
             //for each List, is at least 1 package in state?
@@ -74,7 +75,7 @@ public class Main {
                 }
             }
         }
-        List<Package> confs = x.getConflictsExpanded();
+        List<Package> confs = lastPackage.getConflictsExpanded();
         if(!confs.isEmpty()) {
             for(Package pack : confs){
                 if(state.getPackageList().contains(pack)){
@@ -83,7 +84,7 @@ public class Main {
             }
         }
         if(!state.getAccumulatedConstraints().isEmpty()){
-            if(state.getAccumulatedConstraints().contains(state.getAccumulatedConstraints().get(state.getPackageList().size()-1))){
+            if(state.getAccumulatedConstraints().contains(state.getPackageList().get(state.getPackageList().size()-1))){ //fix this
                 return false;
             }
         }
@@ -93,7 +94,12 @@ public class Main {
     public static boolean isFinal(List<Package> state, FinalConstraints finalState){
         //Does state contains positive, and doesn't contain negative
         for(Package requiredPack : finalState.getPositivePackages()) {
-            if(!state.contains(requiredPack)) {
+            if (!state.contains(requiredPack)) {
+                return false;
+            }
+        }
+        for(Package refusedPack : finalState.getNegativePackages()) {
+            if(state.contains(refusedPack)) {
                 return false;
             }
         }
@@ -114,51 +120,33 @@ public class Main {
     List<Package> repo = JSON.parseObject(readFile(args[0]), repoType);
     TypeReference<List<String>> strListType = new TypeReference<List<String>>() {};
     //List<String> initial = JSON.parseObject(readFile(args[1]), strListType);
-        List<String> initial = new ArrayList<>();
-        initial.add("A=2.01");
+    List<String> initial = new ArrayList<>();
+    //initial.add("A=2.01"); Artificial starting state
     List<String> constraints = JSON.parseObject(readFile(args[2]), strListType);
-
-
-
-    List<Package> initialState = new ArrayList<>();
 
     // Go through each package and parse string constraints into Package references
     for(Package pack : repo) {
         pack.expandRepoConstraints(repo);
     }
 
+    /**
+     * // Expand the initial state string to Packages
     PackageExpand expander = new PackageExpand();
     for(String init : initial){
         initialState.add(expander.expandInitialString(init, repo));
-    }
+    }*/
 
     FinalConstraints finalConstraints = new FinalConstraints(constraints,repo); //is this the right structure?
-
-    //initialState = expandInitialState(initial, repo);
-
-    /////// Testing validity
-    List<Package>[] testState = new List[2];
-    testState[0] = new ArrayList<>();
-    testState[1] = new ArrayList<>();
-    //List<Package> testState = new ArrayList<>();
-    /*testState.add(repo.get(3)); //C
-    testState.add(repo.get(4)); //D
-    testState.add(repo.get(0)); //A -> C/B3.2 and D*/
-    testState[0].add(repo.get(3)); //C
-        testState[1].addAll(repo.get(3).getConflictsExpanded());
-    testState[0].add(repo.get(2)); //B3.0
-        testState[1].addAll(repo.get(2).getConflictsExpanded());
-    Boolean x = isValid(testState);
-    ////////
     State initState = new State();
-    List<Package>[] initStateAndConstraints= new List[2];
-    initStateAndConstraints[0] = new ArrayList<>();
-    initStateAndConstraints[1] = new ArrayList<>();
+    PackageExpand expander = new PackageExpand();
+    for(String init : initial){
+        initState.addPackage(expander.expandInitialString(init, repo));
+    }
 
-    //initStateAndConstraints = [State list, Constraints list]
-    //bruteForce(initState, repo, finalConstraints); // Change bruteForce() to accept State instead of List[2]
-    bruteForce(initStateAndConstraints, repo, finalConstraints);
-
+    List<State> solutions = bruteForce(initState, repo, finalConstraints, new ArrayList<State>());
+    //Return minimal soluti
+        int sssss = 0;
+    int ss = 0;
 
     //Take a final constraint, check it for children
 

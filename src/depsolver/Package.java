@@ -38,6 +38,14 @@ class PackageExpand {
         }
         return new Package(); //TODO erm, if not in repo??
     }
+
+    public List<String> packagesToCommands(State state) {
+        List<String> commands = new ArrayList<>();
+        for(Package pack : state.getPackageList()) {
+            commands.add("+" + pack.getName() + "=" + pack.getVersion());
+        }
+        return commands;
+    }
 }
 
 

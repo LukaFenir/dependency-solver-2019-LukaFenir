@@ -16,7 +16,7 @@ public class Main {
             return solutions;
         }
         if(isFinal(state.getPackageList(), finalState)){ //If IsFinal
-            System.out.println("Solution found!");
+            //System.out.println("Solution found!");
             solutions.add(state);
             return solutions;
             //print list of commands to reach
@@ -125,8 +125,16 @@ public class Main {
         return smallestState; //What happens if no solutions???
     }
 
-    public static void printCommands(State solution, State initialState) {
-
+    /**
+     * Assume initial state is empty list
+     * @param solution
+     * @param initialState
+     */
+    public static String printCommands(State solution, State initialState) {
+        PackageExpand expander = new PackageExpand();
+        List<String> commands = expander.packagesToCommands(solution);
+        String res = JSON.toJSONString(commands, true);
+        return res;
     }
 
     public static void main(String[] args) throws IOException {
@@ -135,20 +143,13 @@ public class Main {
         TypeReference<List<String>> strListType = new TypeReference<List<String>>() {};
         //List<String> initial = JSON.parseObject(readFile(args[1]), strListType);
         List<String> initial = new ArrayList<>();
-        initial.add("B=3.2"); //Artificial starting state
+        //initial.add("B=3.2"); //Artificial starting state
         List<String> constraints = JSON.parseObject(readFile(args[2]), strListType);
 
         // Go through each package and parse string constraints into Package references
         for(Package pack : repo) {
             pack.expandRepoConstraints(repo);
         }
-
-        /**
-         * // Expand the initial state string to Packages
-        PackageExpand expander = new PackageExpand();
-        for(String init : initial){
-            initialState.add(expander.expandInitialString(init, repo));
-        }*/
 
         FinalConstraints finalConstraints = new FinalConstraints(constraints,repo); //is this the right structure?
         State initState = new State();
@@ -158,26 +159,13 @@ public class Main {
         }
 
         List<State> solutions = bruteForce(initState, repo, finalConstraints, new ArrayList<State>());
-        printCommands(chooseSolution(solutions), initState);
+        System.out.println(printCommands(chooseSolution(solutions), initState));
         //Return minimal solution
         int sssss = 0;
 
-        int ss = 0;
 
         //Take a final constraint, check it for children
 
-        // CHANGE CODE BELOW:
-        // using repo, initial and constraints, compute a solution and print the answer
-        for (Package p : repo) {
-          System.out.printf("package %s version %s\n", p.getName(), p.getVersion());
-          for (List<String> clause : p.getDepends()) {
-            System.out.printf("  dep:");
-            for (String q : clause) {
-              System.out.printf(" %s", q);
-            }
-            System.out.printf("\n");
-          }
-        }
 
         }
 

@@ -37,7 +37,7 @@ public class Main {
 
     // CHANGE CODE BELOW:
     // using repo, initial and constraints, compute a solution and print the answer
-    System.out.println("I like bananas");
+    System.out.println("This is the repository:");
     for (Package p : repo) {
       System.out.printf("package %s version %s\n", p.getName(), p.getVersion());
       for (List<String> clause : p.getDepends()) {
@@ -48,6 +48,11 @@ public class Main {
         System.out.printf("\n");
       }
     }
+    //check constraints - which packages need to be installed?
+    //look at first constraint (A), check repository for package
+    //find package that "conflicts" with package A -> check constraints - is D package required?
+    //if A and D required, cannot be done / if D not required,
+    ////Make a tree of dependency?
   }
 
   static String readFile(String filename) throws IOException {

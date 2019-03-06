@@ -1,7 +1,5 @@
 package depsolver;
 
-import com.sun.xml.internal.bind.v2.runtime.reflect.Lister;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -42,49 +40,7 @@ class PackageExpand {
     }
 }
 
-class State {
-    private List<Package> packageList;
-    private List<Package> accConstraints;
 
-    public State() {
-        packageList = new ArrayList<>();
-        accConstraints = new ArrayList<>();
-    }
-
-    public State(List<Package> packages, List<Package> constraints) {
-        packageList = new ArrayList<>();
-        accConstraints = new ArrayList<>();
-        packageList.addAll(packages);
-        accConstraints.addAll(constraints);
-    }
-
-    public void addPackage(Package newPackage) {
-        packageList.add(newPackage);
-        List<Package> newConstraints = newPackage.getConflictsExpanded();
-        for(Package constr : newConstraints) {
-            if(!accConstraints.contains(constr)){
-                accConstraints.add(constr);
-            }
-        }
-    }
-
-    public void addPackages(List<Package> newPackages) {
-        packageList.addAll(newPackages);
-    }
-
-    public void addConstraints(List<Package> newConstraints) {
-        accConstraints.addAll(newConstraints);
-    }
-
-    public List<Package> getPackageList() {
-        return packageList;
-    }
-
-    public List<Package> getAccumulatedConstraints() {
-        return accConstraints;
-    }
-    //Add ability to add to packageList/accConstraint
-}
 
 class PackageConstraint {
 

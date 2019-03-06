@@ -26,12 +26,14 @@ public class Main {
             //solution
             bruteForce(addToState(state, p),removeFromRepo(repo, p), finalState, solutions); //Can't just add to state, need to create new object every test
         }
+        //try uninstalling initial state?
+        //for(Package p : )
         return solutions;
     }
 
     //Gotta initialise a brand new state object each time
     public static State addToState(State originalState, Package newPackage){
-       State newState = new State(originalState.getPackageList(), originalState.getAccumulatedConstraints());
+       State newState = new State(originalState.getPackageList(), originalState.getAccumulatedConstraints(), originalState.getSize());
         /*State newState = new State();
         newState.addPackages(originalState.getPackageList());
         newState.addConstraints(originalState.getAccumulatedConstraints());*/
@@ -115,63 +117,77 @@ public class Main {
         return false; //No package was in state
     }
 
-    public static void main(String[] args) throws IOException {
-    TypeReference<List<Package>> repoType = new TypeReference<List<Package>>() {};
-    List<Package> repo = JSON.parseObject(readFile(args[0]), repoType);
-    TypeReference<List<String>> strListType = new TypeReference<List<String>>() {};
-    //List<String> initial = JSON.parseObject(readFile(args[1]), strListType);
-    List<String> initial = new ArrayList<>();
-    //initial.add("A=2.01"); Artificial starting state
-    List<String> constraints = JSON.parseObject(readFile(args[2]), strListType);
-
-    // Go through each package and parse string constraints into Package references
-    for(Package pack : repo) {
-        pack.expandRepoConstraints(repo);
-    }
-
-    /**
-     * // Expand the initial state string to Packages
-    PackageExpand expander = new PackageExpand();
-    for(String init : initial){
-        initialState.add(expander.expandInitialString(init, repo));
-    }*/
-
-    FinalConstraints finalConstraints = new FinalConstraints(constraints,repo); //is this the right structure?
-    State initState = new State();
-    PackageExpand expander = new PackageExpand();
-    for(String init : initial){
-        initState.addPackage(expander.expandInitialString(init, repo));
-    }
-
-    List<State> solutions = bruteForce(initState, repo, finalConstraints, new ArrayList<State>());
-    //Return minimal soluti
-        int sssss = 0;
-    int ss = 0;
-
-    //Take a final constraint, check it for children
-
-    // CHANGE CODE BELOW:
-    // using repo, initial and constraints, compute a solution and print the answer
-    for (Package p : repo) {
-      System.out.printf("package %s version %s\n", p.getName(), p.getVersion());
-      for (List<String> clause : p.getDepends()) {
-        System.out.printf("  dep:");
-        for (String q : clause) {
-          System.out.printf(" %s", q);
+    public static State chooseSolution(List<State> possibleStates) {
+        State smallestState = null;
+        for(State solution : possibleStates) {
+            smallestState = ((smallestState == null)||(solution.getSize() < smallestState.getSize())) ? solution : smallestState;
         }
-        System.out.printf("\n");
-      }
+        return smallestState; //What happens if no solutions???
     }
 
+    public static void printCommands(State solution, State initialState) {
+
     }
 
+    public static void main(String[] args) throws IOException {
+        TypeReference<List<Package>> repoType = new TypeReference<List<Package>>() {};
+        List<Package> repo = JSON.parseObject(readFile(args[0]), repoType);
+        TypeReference<List<String>> strListType = new TypeReference<List<String>>() {};
+        //List<String> initial = JSON.parseObject(readFile(args[1]), strListType);
+        List<String> initial = new ArrayList<>();
+        initial.add("B=3.2"); //Artificial starting state
+        List<String> constraints = JSON.parseObject(readFile(args[2]), strListType);
+
+        // Go through each package and parse string constraints into Package references
+        for(Package pack : repo) {
+            pack.expandRepoConstraints(repo);
+        }
+
+        /**
+         * // Expand the initial state string to Packages
+        PackageExpand expander = new PackageExpand();
+        for(String init : initial){
+            initialState.add(expander.expandInitialString(init, repo));
+        }*/
+
+        FinalConstraints finalConstraints = new FinalConstraints(constraints,repo); //is this the right structure?
+        State initState = new State();
+        PackageExpand expander = new PackageExpand();
+        for(String init : initial){
+            initState.addPackage(expander.expandInitialString(init, repo));
+        }
+
+        List<State> solutions = bruteForce(initState, repo, finalConstraints, new ArrayList<State>());
+        printCommands(chooseSolution(solutions), initState);
+        //Return minimal solution
+        int sssss = 0;
+
+        int ss = 0;
+
+        //Take a final constraint, check it for children
+
+        // CHANGE CODE BELOW:
+        // using repo, initial and constraints, compute a solution and print the answer
+        for (Package p : repo) {
+          System.out.printf("package %s version %s\n", p.getName(), p.getVersion());
+          for (List<String> clause : p.getDepends()) {
+            System.out.printf("  dep:");
+            for (String q : clause) {
+              System.out.printf(" %s", q);
+            }
+            System.out.printf("\n");
+          }
+        }
+
+        }
 
 
 
-    private static String readFile(String filename) throws IOException {
-    BufferedReader br = new BufferedReader(new FileReader(filename));
-    StringBuilder sb = new StringBuilder();
-    br.lines().forEach(line -> sb.append(line));
-    return sb.toString();
+
+        private static String readFile(String filename) throws IOException {
+        BufferedReader br = new BufferedReader(new FileReader(filename));
+        StringBuilder sb = new StringBuilder();
+        br.lines().forEach(line -> sb.append(line));
+        return sb.toString();
     }
 }

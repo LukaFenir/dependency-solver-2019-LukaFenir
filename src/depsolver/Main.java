@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 package depsolver;
 
 import com.alibaba.fastjson.JSON;
@@ -253,4 +252,3 @@ public class Main {
     return sb.toString();
     }
 }
->>>>>>> ef6e29f97cf9aec3cc2d264aab1561cacb19bc5f

@@ -7,6 +7,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Main {
@@ -15,6 +16,11 @@ public class Main {
         if(!isValid(state)){
             return solutions;
         }
+        /**
+         * Checks if state is valid final state, then stops without checking for other solutions
+         * Might there be a smaller solution if we keep checking?
+         * eg. State[A1.3], but State[A1.3,A1.4] is never found
+         */
         if(isFinal(state.getPackageList(), finalState)){ //If IsFinal
             //System.out.println("Solution found!");
             solutions.add(state);
@@ -60,7 +66,13 @@ public class Main {
     search(y)
      */
 
-    //[List<Package> packages, List<Package> grouped conflicts]
+    /**
+     * State is valid if: it's empty, all dependencies are present,
+     * all conflicts are absent (new and old)
+     *
+     * @param state State to be tested
+     * @return      Is state valid
+     */
     //State is not empty, New package dependencies are met, New package does not conflict with current packages
     public static boolean isValid(State state){
         if(state.getPackageList().isEmpty()){
@@ -93,10 +105,18 @@ public class Main {
         return true;
     }
 
+    /**
+     * Compares state with finalState
+     * Does state contain at least 1 of the packages in each constraint?
+     * [ +[A1,A2,A3] , +[D] ]
+     * @param state         State to be tested
+     * @param finalState    Constraints of a final state
+     * @return              Is state a valid final state
+     */
     public static boolean isFinal(List<Package> state, FinalConstraints finalState){
         //Does state contains positive, and doesn't contain negative
-        for(Package requiredPack : finalState.getPositivePackages()) {
-            if (!state.contains(requiredPack)) {
+        for(List<Package> requiredPack : finalState.getPositivePackages()) {
+            if (Collections.disjoint(state, requiredPack)) {
                 return false;
             }
         }
@@ -161,16 +181,7 @@ public class Main {
         List<State> solutions = bruteForce(initState, repo, finalConstraints, new ArrayList<State>());
         System.out.println(printCommands(chooseSolution(solutions), initState));
         //Return minimal solution
-        int sssss = 0;
-
-
-        //Take a final constraint, check it for children
-
-
         }
-
-
-
 
         private static String readFile(String filename) throws IOException {
         BufferedReader br = new BufferedReader(new FileReader(filename));

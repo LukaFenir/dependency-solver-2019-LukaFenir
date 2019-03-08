@@ -3,20 +3,6 @@ package depsolver;
 import java.util.ArrayList;
 import java.util.List;
 
-enum ECommand {
-    INSTALL,
-    UNINSTALL
-}
-
-class Command {
-
-    ECommand installCommand;
-
-    public Command(){
-
-    }
-}
-
 public class State {
     private List<Package> packageList; //list of commands?
     private List<Package> accConstraints;

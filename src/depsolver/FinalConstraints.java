@@ -4,35 +4,34 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FinalConstraints {
-    private List<Package> positiveConstraints;
-    private List<Package> negativeConstraints;
+    private List<List<Package>> positiveConstraints; //List of lists of packages
+    private List<Package> negativeConstraints; //List of lists of packages
 
     public FinalConstraints(List<String> constraintsString, List<Package> raw_repo) {
-        List<List<Package>> expanded = expandConstraints(constraintsString, raw_repo);
-        positiveConstraints = expanded.get(0);
-        negativeConstraints = expanded.get(1);
+        expandConstraints(constraintsString, raw_repo);
     }
 
-    private List<List<Package>> expandConstraints(List<String> constraintsString, List<Package> raw_repo) {
-        List<List<Package>> constraintsPosNeg = new ArrayList<>();
-        constraintsPosNeg.add(new ArrayList<>());
-        constraintsPosNeg.add(new ArrayList<>()); //change to loop?
+    private void expandConstraints(List<String> constraintsString, List<Package> raw_repo) {
+        List<List<Package>> positive = new ArrayList<>();
+        List<Package> negative = new ArrayList<>();
 
         PackageExpand expander = new PackageExpand();
         for(String s : constraintsString) {
             String sign = s.substring(0,1);
+            //At least one of these
             List<Package> packages = expander.expandPackageString(s.substring(1), raw_repo);
             switch(sign) {
                 case ("+"):
-                    constraintsPosNeg.get(0).addAll(packages); break;
+                    positive.add(packages); break; //Need to make list of lists
                 case ("-"):
-                    constraintsPosNeg.get(1).addAll(packages); break;
+                    negative.addAll(packages); break;
             }
         }
-        return constraintsPosNeg;
+        positiveConstraints = positive;
+        negativeConstraints = negative;
     }
 
-    public List<Package> getPositivePackages() {
+    public List<List<Package>> getPositivePackages() {
         return positiveConstraints;
     }
 

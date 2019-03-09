@@ -42,7 +42,18 @@ class PackageExpand {
     public List<String> packagesToCommands(State state, State initialState) {
         List<String> commands = new ArrayList<>();
         //compare state0 and initial0, if different, uninstall initial0
-        for(Package pack : state.getPackageList()) {
+        List<Package> packages = state.getPackageList();
+        List<Package> initialPackages = initialState.getPackageList();
+        for(int i = 0; i < initialState.getPackageList().size(); i++){
+            if(packages.get(0) == initialState.getPackageList().get(i)){
+                commands.add("+" + packages.get(0).getName() + "=" + packages.get(0).getVersion());
+                packages.remove(0);
+            }
+            else {
+                commands.add("-" + initialPackages.get(i).getName() + "=" + initialPackages.get(i).getVersion());
+            }
+        }
+        for(Package pack : packages) {
             commands.add("+" + pack.getName() + "=" + pack.getVersion()); //How to get from initial state to state
         }
         return commands;

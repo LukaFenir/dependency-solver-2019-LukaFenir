@@ -51,7 +51,9 @@ public class Main {
          */
         if(isFinal(state.getPackageList(), finalState)){ //If IsFinal
             //System.out.println("Solution found!");
-            solutions.add(state);
+            if(solutions.size() == (0) || state.getSize() < solutions.get(solutions.size() - 1).getSize()) {
+                solutions.add(state); //Don't bother adding if previous is smaller?
+            }
             return solutions;
             //print list of commands to reach
         }

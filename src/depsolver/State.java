@@ -27,9 +27,18 @@ public class State {
         size += newPackage.getSize();
         List<Package> newConstraints = newPackage.getConflictsExpanded();
         for(Package constr : newConstraints) {
-            if(!accConstraints.contains(constr)){
+            //if(!accConstraints.contains(constr)){ //TODO this needs to be removed, consequences to be dealt with
                 accConstraints.add(constr);
-            }
+            //}
+        }
+    }
+
+    public void removePackage(Package remPackage) {
+        packageList.remove(remPackage);
+        size += 1000000;
+        List<Package> newConstraints = remPackage.getConflictsExpanded();
+        for(Package constr : newConstraints) {
+            accConstraints.remove(constr);
         }
     }
 

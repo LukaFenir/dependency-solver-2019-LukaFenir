@@ -6,13 +6,41 @@ import com.alibaba.fastjson.TypeReference;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class Main {
 
     public static List<State> bruteForce(State state, List<Package> repo, FinalConstraints finalState, List<State> solutions){
+        if(!state.getPackageList().isEmpty()) { //If state is empty AND couldn't find solution
+            //oooo I could create my own package with a size of 1,000,000
+            //Or i could use the state's inbuilt size mechanism
+            repo.removeAll(state.getPackageList());
+        }
+        removeRecursive(state, repo, finalState, solutions);
+        return solutions;
+    }
+
+    /**
+     * If initial state isn't empty, try with current state, then remove one by one
+     * @param state
+     * @param repo
+     * @param finalState
+     * @param solutions
+     * @return
+     */
+    public static List<State> removeRecursive(State state, List<Package> repo, FinalConstraints finalState, List<State> solutions){
+        List<State> solutions2 = new ArrayList<>();
+        solutions2 = addRecursive(state, repo, finalState, solutions);
+        if(!state.getPackageList().isEmpty()){
+            for(Package p : state.getPackageList()){
+                //
+                removeRecursive(removeFromState(state,p), addToRepo(repo,p), finalState, solutions);
+            }
+        }
+        return solutions2;
+    }
+
+    public static List<State> addRecursive(State state, List<Package> repo, FinalConstraints finalState, List<State> solutions){
         if(!isValid(state)){
             return solutions;
         }
@@ -30,7 +58,7 @@ public class Main {
         //List<Package>[] stateCopy = state;
         for(Package p : repo) {
             //solution
-            bruteForce(addToState(state, p),removeFromRepo(repo, p), finalState, solutions); //Can't just add to state, need to create new object every test
+            addRecursive(addToState(state, p),removeFromRepo(repo, p), finalState, solutions); //Can't just add to state, need to create new object every test
         }
         //try uninstalling initial state?
         //for(Package p : )
@@ -47,10 +75,28 @@ public class Main {
         return newState;
     }
 
+    //Gotta initialise a brand new state object each time
+    public static State removeFromState(State originalState, Package remPackage){
+        State newState = new State(originalState.getPackageList(), originalState.getAccumulatedConstraints(), originalState.getSize());
+        /*State newState = new State();
+        newState.addPackages(originalState.getPackageList());
+        newState.addConstraints(originalState.getAccumulatedConstraints());*/
+        //remPackage.setUninstall();
+        newState.removePackage(remPackage);
+        return newState;
+    }
+
     public static List<Package> removeFromRepo(List<Package> originalRepo, Package pack){
         List<Package> newRepo = new ArrayList<>();
         newRepo.addAll(originalRepo);
         newRepo.remove(pack);
+        return newRepo;
+    }
+
+    public static List<Package> addToRepo(List<Package> originalRepo, Package pack){
+        List<Package> newRepo = new ArrayList<>();
+        newRepo.addAll(originalRepo);
+        newRepo.add(pack);
         return newRepo;
     }
 
@@ -146,13 +192,13 @@ public class Main {
     }
 
     /**
-     * Assume initial state is empty list
+     * Take the chosen solution and return the JSON of commands
      * @param solution
      * @param initialState
      */
-    public static String printCommands(State solution, State initialState) {
+    public static String printCommands(State solution, State initialState) { //Need initial state? (for uninstall paths)
         PackageExpand expander = new PackageExpand();
-        List<String> commands = expander.packagesToCommands(solution);
+        List<String> commands = expander.packagesToCommands(solution, initialState);
         String res = JSON.toJSONString(commands, true);
         return res;
     }
@@ -161,8 +207,8 @@ public class Main {
         TypeReference<List<Package>> repoType = new TypeReference<List<Package>>() {};
         List<Package> repo = JSON.parseObject(readFile(args[0]), repoType);
         TypeReference<List<String>> strListType = new TypeReference<List<String>>() {};
-        //List<String> initial = JSON.parseObject(readFile(args[1]), strListType);
-        List<String> initial = new ArrayList<>();
+        List<String> initial = JSON.parseObject(readFile(args[1]), strListType);
+        //List<String> initial = new ArrayList<>();
         //initial.add("B=3.2"); //Artificial starting state
         List<String> constraints = JSON.parseObject(readFile(args[2]), strListType);
 
@@ -178,6 +224,8 @@ public class Main {
             initState.addPackage(expander.expandInitialString(init, repo));
         }
 
+        //List<State> solutions = removeRecursive(initState, repo, finalConstraints, new ArrayList<State>());
+        //Expanded initial state, expanded repo, constraints of a final state
         List<State> solutions = bruteForce(initState, repo, finalConstraints, new ArrayList<State>());
         System.out.println(printCommands(chooseSolution(solutions), initState));
         //Return minimal solution

@@ -39,6 +39,23 @@ class PackageExpand {
         return new Package(); //TODO erm, if not in repo??
     }
 
+    public List<String> stringifyCommands(List<Command> commandList) {
+        List<String> commandString = new ArrayList<>();
+        //Either put the initialState patch in, or fix the solution creator to accept initial state
+        for(Command command : commandList) {
+            switch(command.getInstruction()) {
+                case INSTALL:
+                    commandString.add("+" + command.getPackage().getName() + "=" + command.getPackage().getVersion());
+                    break;
+                case UNINSTALL:
+                    commandString.add("-" + command.getPackage().getName() + "=" + command.getPackage().getVersion());
+                    break;
+            }
+
+        }
+        return commandString;
+    }
+
     public List<String> packagesToCommands(State state, State initialState) {
         List<String> commands = new ArrayList<>();
         //compare state0 and initial0, if different, uninstall initial0
@@ -134,7 +151,6 @@ public class Package {
     private List<String> conflicts = new ArrayList<>();
     private List<List<Package>> dependsExpanded = new ArrayList<>();
     private List<Package> conflictsExpanded = new ArrayList<>();
-    private boolean install = true;
 
     public String getName() { return name; }
     public String getVersion() { return version; }
@@ -143,7 +159,6 @@ public class Package {
     public List<String> getConflicts() { return conflicts; }
     public List<List<Package>> getDependsExpanded() { return dependsExpanded; } //Could remove these two? Won't need strings later
     public List<Package> getConflictsExpanded() { return conflictsExpanded; }
-    public boolean installPackage(){ return install; }
     // Used by JSON parser
     public void setName(String name) { this.name = name; }
     public void setVersion(String version) { this.version = version; }
@@ -152,7 +167,6 @@ public class Package {
     public void setConflicts(List<String> conflicts) { this.conflicts = conflicts; }
     public void addDependsExpanded(List<Package> deps) { dependsExpanded.add(deps); }
     public void addConflictsExpanded(List<Package> conf) { this.conflictsExpanded = conf; }
-    public void setUninstall() { install = false; }
 
     public void expandRepoConstraints(List<Package> raw_repo) {
         for (List<String> dependencies : getDepends()) {

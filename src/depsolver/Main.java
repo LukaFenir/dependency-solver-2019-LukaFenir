@@ -11,12 +11,12 @@ import java.util.*;
 public class Main {
 
     public static List<State> bruteForce(State state, List<Package> repo, FinalConstraints finalState, List<State> solutions){
-        if(!state.getPackageList().isEmpty()) { //If state is empty AND couldn't find solution
-            //oooo I could create my own package with a size of 1,000,000
-            //Or i could use the state's inbuilt size mechanism
+        List<List<Package>> seen = new ArrayList<>();
+        seen.add(state.getPackageList());
+        if(!state.getPackageList().isEmpty()) { //Remove packages from repo that's already in initial state
             repo.removeAll(state.getPackageList());
         }
-        removeRecursive(state, repo, finalState, solutions);
+        removeRecursive(state, repo, finalState, solutions, seen);
         return solutions;
     }
 
@@ -26,21 +26,24 @@ public class Main {
      * @param repo
      * @param finalState
      * @param solutions
+     * @param seen          List of intermediate states seen before
      * @return
      */
-    public static List<State> removeRecursive(State state, List<Package> repo, FinalConstraints finalState, List<State> solutions){
+    public static List<State> removeRecursive(State state, List<Package> repo, FinalConstraints finalState, List<State> solutions, List<List<Package>> seen){
         List<State> solutions2 = new ArrayList<>();
-        solutions2 = addRecursive(state, repo, finalState, solutions);
+        solutions2 = addRecursive(state, repo, finalState, solutions, seen);
         if(!state.getPackageList().isEmpty()){
             for(Package p : state.getPackageList()){
-                //
-                removeRecursive(removeFromState(state,p), addToRepo(repo,p), finalState, solutions);
+                removeRecursive(removeFromState(state,p), addToRepo(repo,p), finalState, solutions, seen);
             }
         }
         return solutions2;
     }
 
-    public static List<State> addRecursive(State state, List<Package> repo, FinalConstraints finalState, List<State> solutions){
+    public static List<State> addRecursive(State state, List<Package> repo, FinalConstraints finalState, List<State> solutions, List<List<Package>> seen){
+        if(!isSeen(state.getPackageList(),seen)){
+
+        }
         if(!isValid(state)){
             return solutions;
         }
@@ -52,6 +55,7 @@ public class Main {
         if(isFinal(state.getPackageList(), finalState)){ //If IsFinal
             //System.out.println("Solution found!");
             if(solutions.size() == (0) || state.getSize() < solutions.get(solutions.size() - 1).getSize()) {
+                //banana
                 solutions.add(state); //Don't bother adding if previous is smaller?
             }
             return solutions;
@@ -60,7 +64,7 @@ public class Main {
         //List<Package>[] stateCopy = state;
         for(Package p : repo) {
             //solution
-            addRecursive(addToState(state, p),removeFromRepo(repo, p), finalState, solutions); //Can't just add to state, need to create new object every test
+            addRecursive(addToState(state, p),removeFromRepo(repo, p), finalState, solutions, seen); //Can't just add to state, need to create new object every test
         }
         //try uninstalling initial state?
         //for(Package p : )
@@ -69,22 +73,15 @@ public class Main {
 
     //Gotta initialise a brand new state object each time
     public static State addToState(State originalState, Package newPackage){
-       State newState = new State(originalState.getPackageList(), originalState.getAccumulatedConstraints(), originalState.getSize());
-        /*State newState = new State();
-        newState.addPackages(originalState.getPackageList());
-        newState.addConstraints(originalState.getAccumulatedConstraints());*/
-        newState.addPackage(newPackage);
+        State newState = new State(originalState.getPackageList(), originalState.getCommandList(), originalState.getAccumulatedConstraints(), originalState.getSize());
+        newState.installPackage(newPackage);
         return newState;
     }
 
     //Gotta initialise a brand new state object each time
     public static State removeFromState(State originalState, Package remPackage){
-        State newState = new State(originalState.getPackageList(), originalState.getAccumulatedConstraints(), originalState.getSize());
-        /*State newState = new State();
-        newState.addPackages(originalState.getPackageList());
-        newState.addConstraints(originalState.getAccumulatedConstraints());*/
-        //remPackage.setUninstall();
-        newState.removePackage(remPackage);
+        State newState = new State(originalState.getPackageList(), originalState.getCommandList(), originalState.getAccumulatedConstraints(), originalState.getSize());
+        newState.uninstallPackage(remPackage);
         return newState;
     }
 
@@ -102,17 +99,9 @@ public class Main {
         return newRepo;
     }
 
-    /*
-    search(x):
-  if not valid(x) return
-  if x seen, return
-  make x seen
-  if final(x):
-    solution found!
-  for each package p in repo:
-    obtain y from x by flipping state of p (installed<->uninstalled)
-    search(y)
-     */
+    public static boolean isSeen(List<Package> state, List<List<Package>> seenStates){
+        seenStates.contains()
+    }
 
     /**
      * State is valid if: it's empty, all dependencies are present,
@@ -200,7 +189,8 @@ public class Main {
      */
     public static String printCommands(State solution, State initialState) { //Need initial state? (for uninstall paths)
         PackageExpand expander = new PackageExpand();
-        List<String> commands = expander.packagesToCommands(solution, initialState);
+        List<String> commands = expander.stringifyCommands(solution.getCommandList());
+        //List<String> commands = expander.packagesToCommands(solution, initialState);
         String res = JSON.toJSONString(commands, true);
         return res;
     }
@@ -226,11 +216,8 @@ public class Main {
             initState.addPackage(expander.expandInitialString(init, repo));
         }
 
-        //List<State> solutions = removeRecursive(initState, repo, finalConstraints, new ArrayList<State>());
-        //Expanded initial state, expanded repo, constraints of a final state
         List<State> solutions = bruteForce(initState, repo, finalConstraints, new ArrayList<State>());
         System.out.println(printCommands(chooseSolution(solutions), initState));
-        //Return minimal solution
         }
 
         private static String readFile(String filename) throws IOException {

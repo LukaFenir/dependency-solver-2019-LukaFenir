@@ -100,7 +100,7 @@ public class Main {
     }
 
     public static boolean isSeen(List<Package> state, List<List<Package>> seenStates){
-        seenStates.contains()
+        return true;
     }
 
     /**
